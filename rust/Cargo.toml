@@ -1,0 +1,12 @@
+[package]
+name = "tower_defense"
+version = "0.1.0"
+authors = ["l1npengtul <l1npengtul@protonmail.com>"]
+edition = "2018"
+
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+gdnative = "0.9.3"
+# gdnative = { path = "../../godot-rust/gdnative" }
