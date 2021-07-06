@@ -13,6 +13,7 @@ fn init(handle: InitHandle) {
     handle.add_class::<defenses::still::barracade::Barracade>();
     handle.add_class::<defenses::traps::landmine::Landmine>();
     handle.add_class::<game::Game>();
+    handle.add_class::<weapon::projectiles::bullet::Bullet>();
     handle.add_class::<weapon::rifle::Rifle>();
 }
 

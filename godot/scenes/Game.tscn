@@ -2,5 +2,5 @@
 
 [ext_resource path="res://native/Game.gdns" type="Script" id=1]
 
-[node name="Game" type="Node"]
+[node name="Game" type="Node2D"]
 script = ExtResource( 1 )
