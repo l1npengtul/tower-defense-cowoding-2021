@@ -6,7 +6,7 @@ use gdnative::prelude::*;
 #[inherit(Sprite)]
 #[register_with(Self::register_builder)]
 pub struct Rifle {
-    name: String,
+    bullet: Ref<PackedScene>,
 }
 
 // __One__ `impl` block can have the `#[methods]` attribute, which will generate
@@ -14,33 +14,45 @@ pub struct Rifle {
 #[methods]
 impl Rifle {
     // Register the builder for methods, properties and/or signals.
-    fn register_builder(_builder: &ClassBuilder<Self>) {
-        godot_print!("Rifle builder is registered!");
-    }
+    fn register_builder(_builder: &ClassBuilder<Self>) {}
 
     /// The "constructor" of the class.
     fn new(_owner: &Sprite) -> Self {
-        godot_print!("Rifle is created!");
-        Rifle {
-            name: "".to_string(),
+        let resource_loader = ResourceLoader::godot_singleton();
+        let bullet = unsafe {
+            resource_loader
+                .assume_unique()
+                .load("res://scenes/weapon/projectiles/Bullet.tscn", "", false)
+                .unwrap()
         }
+        .cast::<PackedScene>()
+        .unwrap();
+        Rifle { bullet }
     }
 
-    // In order to make a method known to Godot, the #[export] attribute has to be used.
-    // In Godot script-classes do not actually inherit the parent class.
-    // Instead they are "attached" to the parent object, called the "owner".
-    // The owner is passed to every single exposed method.
     #[export]
-    unsafe fn _ready(&mut self, _owner: &Sprite) {
-        // The `godot_print!` macro works like `println!` but prints to the Godot-editor
-        // output tab as well.
-        self.name = "Rifle".to_string();
-        godot_print!("{} is ready!", self.name);
-    }
+    fn _ready(&mut self, _owner: &Sprite) {}
 
-    // This function will be called in every frame
     #[export]
-    unsafe fn _process(&self, _owner: &Sprite, delta: f64) {
-        godot_print!("Inside {} _process(), delta is {}", self.name, delta);
+    fn on_shoot_gun(&self, owner: &Sprite) {
+        let global_pos = owner.global_position();
+        let global_rot = owner.global_rotation();
+        let bullet_instance =
+            unsafe { self.bullet.assume_safe().instance(0).unwrap().assume_safe() };
+        unsafe {
+            owner
+                .get_tree()
+                .unwrap()
+                .assume_safe()
+                .root()
+                .unwrap()
+                .assume_safe()
+                .get_child(0)
+                .unwrap()
+                .assume_safe()
+        }
+        .add_child(bullet_instance, false);
+        bullet_instance.set("Position", global_pos.to_variant());
+        bullet_instance.set("Rotation", global_rot.to_variant());
     }
 }

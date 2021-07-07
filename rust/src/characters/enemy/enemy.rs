@@ -1,46 +1,35 @@
 use gdnative::api::*;
 use gdnative::prelude::*;
 
-/// The Enemy "class"
-#[derive(NativeClass)]
-#[inherit(Node)]
-#[register_with(Self::register_builder)]
-pub struct Enemy {
-    name: String,
+#[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
+enum States {
+    Idle,
+    MoveToTarget,
+    Shooting,
+    Die,
+    Dead,
 }
 
-// __One__ `impl` block can have the `#[methods]` attribute, which will generate
-// code to automatically bind any exported methods to Godot.
+#[derive(NativeClass)]
+#[inherit(KinematicBody2D)]
+#[register_with(Self::register_builder)]
+pub struct Enemy {
+    current_state: States,
+}
+
 #[methods]
 impl Enemy {
-    // Register the builder for methods, properties and/or signals.
-    fn register_builder(_builder: &ClassBuilder<Self>) {
-        godot_print!("Enemy builder is registered!");
-    }
+    fn register_builder(_builder: &ClassBuilder<Self>) {}
 
-    /// The "constructor" of the class.
-    fn new(_owner: &Node) -> Self {
-        godot_print!("Enemy is created!");
+    fn new(_owner: &KinematicBody2D) -> Self {
         Enemy {
-            name: "".to_string(),
+            current_state: States::Idle,
         }
     }
 
-    // In order to make a method known to Godot, the #[export] attribute has to be used.
-    // In Godot script-classes do not actually inherit the parent class.
-    // Instead they are "attached" to the parent object, called the "owner".
-    // The owner is passed to every single exposed method.
     #[export]
-    unsafe fn _ready(&mut self, _owner: &Node) {
-        // The `godot_print!` macro works like `println!` but prints to the Godot-editor
-        // output tab as well.
-        self.name = "Enemy".to_string();
-        godot_print!("{} is ready!", self.name);
-    }
+    fn _ready(&mut self, _owner: &KinematicBody2D) {}
 
-    // This function will be called in every frame
     #[export]
-    unsafe fn _process(&self, _owner: &Node, delta: f64) {
-        godot_print!("Inside {} _process(), delta is {}", self.name, delta);
-    }
+    fn _on_visual_area_body_entered(&self, _owner: &KinematicBody2D, _node: Variant) {}
 }

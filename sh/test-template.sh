@@ -1,5 +1,5 @@
 GAME=my-awesome-game
-GODOT_VER=3.2
+GODOT_VER=3.3.2
 template_directory=$PWD
 git branch
 tree -a "${template_directory}"

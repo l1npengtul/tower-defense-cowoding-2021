@@ -9,6 +9,7 @@ use gdnative::prelude::{godot_init, InitHandle};
 // Function that registers all exposed classes to Godot
 fn init(handle: InitHandle) {
     handle.add_class::<characters::enemy::enemy::Enemy>();
+    handle.add_class::<characters::goal::Goal>();
     handle.add_class::<characters::player::Player>();
     handle.add_class::<defenses::still::barracade::Barracade>();
     handle.add_class::<defenses::traps::landmine::Landmine>();
