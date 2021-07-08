@@ -6,41 +6,86 @@ use gdnative::prelude::*;
 #[inherit(Area2D)]
 #[register_with(Self::register_builder)]
 pub struct Landmine {
-    name: String,
+    damage: i64,
+    exploded: bool,
 }
 
-// __One__ `impl` block can have the `#[methods]` attribute, which will generate
-// code to automatically bind any exported methods to Godot.
 #[methods]
 impl Landmine {
     // Register the builder for methods, properties and/or signals.
     fn register_builder(_builder: &ClassBuilder<Self>) {
-        godot_print!("Landmine builder is registered!");
     }
 
     /// The "constructor" of the class.
     fn new(_owner: &Area2D) -> Self {
-        godot_print!("Landmine is created!");
         Landmine {
-            name: "".to_string(),
+            damage: 5,
+            exploded: false
         }
     }
 
-    // In order to make a method known to Godot, the #[export] attribute has to be used.
-    // In Godot script-classes do not actually inherit the parent class.
-    // Instead they are "attached" to the parent object, called the "owner".
-    // The owner is passed to every single exposed method.
     #[export]
-    unsafe fn _ready(&mut self, _owner: &Area2D) {
-        // The `godot_print!` macro works like `println!` but prints to the Godot-editor
-        // output tab as well.
-        self.name = "Landmine".to_string();
-        godot_print!("{} is ready!", self.name);
+    fn _ready(&mut self, owner: &Area2D) {
+        let animation_player = unsafe {
+            owner.get_node("AnimationPlayer").unwrap().assume_safe().cast::<AnimationPlayer>().unwrap()
+        };
+        animation_player.play("IDLE", -1.0, 1.0, false);
     }
 
-    // This function will be called in every frame
     #[export]
-    unsafe fn _process(&self, _owner: &Area2D, delta: f64) {
-        godot_print!("Inside {} _process(), delta is {}", self.name, delta);
+    fn _on_land_mine_activated(&mut self, owner: &Area2D, node: Variant) {
+        let node = unsafe {
+            node.try_to_object().unwrap().cast::<Node>().unwrap().assume_safe()
+        };
+
+        if node.is_in_group("enemy") {
+            self.explode(owner);
+        }
     }
+
+    #[export]
+    fn _on_animation_finished(&mut self, owner: &Area2D, animation: Variant) {
+        let animation = animation.to_string();
+        match animation.as_str() {
+            "IDLE" => {}
+            "EXPLODE" => {
+                self.exploded = true;
+                owner.queue_free();
+            }
+            _ => {}
+        }
+    }
+
+    #[export]
+    fn _on_explode_area_damage(&self, owner: &Area2D, node: Variant) {
+        let node = unsafe {
+            node.try_to_object().unwrap().assume_safe().cast::<Node>().unwrap()
+        };
+        let explosion_area = unsafe {
+            owner.get_node("ExplosionArea").unwrap().assume_safe().cast::<Area2D>().unwrap()
+        };
+
+        let bodies = explosion_area.get_overlapping_bodies();
+
+        for idx in 0..bodies.len() {
+            let node = unsafe { bodies.get(idx).try_to_object().unwrap().assume_safe().cast::<Node>().unwrap() };
+            if node.has_method("take_damage") {
+                unsafe {
+                    node.call("take_damage", &[Variant::from_i64(self.damage)])
+                }
+            }
+        }
+
+    }
+
+
+    #[export]
+    fn explode(&mut self, owner: &Area2D) {
+        let animation_player = unsafe {
+            owner.get_node("AnimationPlayer").unwrap().assume_safe().cast::<AnimationPlayer>().unwrap()
+        };
+        animation_player.play("EXPLODE", -1.0, 1.0, false);
+    }
+
+
 }
